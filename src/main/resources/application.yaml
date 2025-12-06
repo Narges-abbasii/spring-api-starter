@@ -7,3 +7,6 @@ spring:
     password: Atiye_2976
   jpa:
     show-sql: true
+
+  jwt:
+    secret: ${JWT_SECRET}
