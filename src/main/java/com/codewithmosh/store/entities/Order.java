@@ -49,8 +49,11 @@ public class Order {
             var orderItem = new OrderItem(order, item.getProduct(), item.getQuantity());
             order.items.add(orderItem);
         });
-
         return order;
+    }
+
+    public boolean isPlacedBy(User customer) {
+        return this.customer.equals(customer);
     }
 
 }
