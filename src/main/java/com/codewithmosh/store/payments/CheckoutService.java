@@ -1,12 +1,12 @@
 package com.codewithmosh.store.payments;
 
-import com.codewithmosh.store.entities.Order;
-import com.codewithmosh.store.exceptions.CartEmptyException;
-import com.codewithmosh.store.exceptions.CartNotFoundException;
-import com.codewithmosh.store.repositories.CartRepository;
-import com.codewithmosh.store.repositories.OrderRepository;
-import com.codewithmosh.store.services.AuthService;
-import com.codewithmosh.store.services.CartService;
+import com.codewithmosh.store.orders.Order;
+import com.codewithmosh.store.carts.CartEmptyException;
+import com.codewithmosh.store.carts.CartNotFoundException;
+import com.codewithmosh.store.carts.CartRepository;
+import com.codewithmosh.store.orders.OrderRepository;
+import com.codewithmosh.store.auth.AuthService;
+import com.codewithmosh.store.carts.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +26,13 @@ public class CheckoutService {
         if (cart == null) {
             throw new CartNotFoundException();
         }
+
         if (cart.isEmpty()) {
             throw new CartEmptyException();
         }
+
         var order = Order.fromCart(cart, authService.getCurrentUser());
+
         orderRepository.save(order);
 
         try {
@@ -38,8 +41,8 @@ public class CheckoutService {
             cartService.clearCart(cart.getId());
 
             return new CheckoutResponse(order.getId(), session.getCheckoutUrl());
-
-        } catch (PaymentException ex) {
+        }
+        catch (PaymentException ex) {
             orderRepository.delete(order);
             throw ex;
         }
@@ -48,7 +51,7 @@ public class CheckoutService {
     public void handleWebhookEvent(WebhookRequest request) {
         paymentGateway
                 .parseWebhookRequest(request)
-                .ifPresent(paymentResult ->{
+                .ifPresent(paymentResult -> {
                     var order = orderRepository.findById(paymentResult.getOrderId()).orElseThrow();
                     order.setStatus(paymentResult.getPaymentStatus());
                     orderRepository.save(order);
